@@ -131,7 +131,7 @@ def least_expensive():
 # ----Telegram BOT part----------------
 from telebot import types
 
-bot_token = "862322269:AAFWcrM8n3KeR7QOnW8ZjyHS2p5kWfM7ZkQ"
+bot_token = "FIXME"
 
 bot = telebot.TeleBot(bot_token)
 

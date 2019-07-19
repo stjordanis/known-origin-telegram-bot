@@ -20,19 +20,20 @@ def telegram_webhook(request):
         if message.lower() == "least expensive":
             least_expensive(chat_id)
 
-        if message.lower() == "most expensive":
+        elif message.lower() == "most expensive":
             most_expensive(chat_id)
 
-        if message.lower() == "latest activity":
+        elif message.lower() == "latest activity":
             latest_activity(chat_id)
 
-        if message.lower() == "latest creations":
+        elif message.lower() == "latest creations":
             latest_creations(chat_id)
 
-        if message.lower() == "/start" or message.lower() == "start":
+        elif message.lower() == "/start" or message.lower() == "start":
             start(chat_id)
 
-        bot.sendMessage(chat_id=chat_id, text=message)
+        else:
+            bot.sendMessage(chat_id=chat_id, text=message)
 
     return "ok"
 
@@ -96,7 +97,7 @@ def latest_creations(chat_id):
         high_works = high_works + ", " + html_link
         high_works = high_works + "\n"
 
-    bot.sendMessage(chat_id, high_works, parse_mode="HTML")
+    bot.sendMessage(chat_id=chat_id, text=high_works, parse_mode="HTML")
 
 
 def latest_activity(chat_id):
