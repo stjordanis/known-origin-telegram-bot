@@ -22,3 +22,6 @@ $ gcloud beta functions deploy telegram_webhook --set-env-vars "TELEGRAM_TOKEN=0
 
 * Live - `@knownorigin_test`
 * Test - `@knownorigin_test_bot`
+
+## Register endpoint on bot the callback URL
+* `curl "https://api.telegram.org/bot<ID>:<CODE>/setWebhook?url=<GENERATED_FUNCTION_URL>”
