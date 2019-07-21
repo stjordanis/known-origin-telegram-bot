@@ -1,7 +1,17 @@
+import json
 import os
+import urllib.request
+
 import telegram
-import urllib.request, json
-from time import sleep
+import logging
+
+# Enable logging
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    level=logging.DEBUG
+)
+
+logger = logging.getLogger(__name__)
 
 bot = telegram.Bot(token=os.environ["TELEGRAM_TOKEN"])
 
@@ -9,31 +19,43 @@ bot = telegram.Bot(token=os.environ["TELEGRAM_TOKEN"])
 def telegram_webhook(request):
     if request.method == "POST":
         update = telegram.Update.de_json(request.get_json(force=True), bot)
+        print("executing function")
         print(update)
 
-        chat_id = update.message.chat.id
+        if update and update.callback_query:
+            # Reply with the same message
+            chat_id = update.callback_query.message.chat.id
+            message = update.callback_query.data
+        else:
+            # Reply with the same message
+            chat_id = update.message.chat.id
+            message = update.message.text
 
-        # Reply with the same message
         # bot.sendMessage(chat_id=chat_id, text=update.message.text)
-        message = update.message.text
 
-        if message.lower() == "least expensive":
-            least_expensive(chat_id)
-
-        elif message.lower() == "most expensive":
-            most_expensive(chat_id)
-
-        elif message.lower() == "latest activity":
+        if message.lower() == "latest activity":
             latest_activity(chat_id)
 
         elif message.lower() == "latest creations":
             latest_creations(chat_id)
 
+        # elif message.lower() == "artworks by artist":
+        #     artist_works_menu(chat_id)
+
+        elif message.lower() == "all artists":
+            all_artists(chat_id)
+
+        elif message.lower() == "least expensive":
+            least_expensive(chat_id)
+
+        elif message.lower() == "most expensive":
+            most_expensive(chat_id)
+
         elif message.lower() == "/start" or message.lower() == "start":
             start(chat_id)
 
         else:
-            bot.sendMessage(chat_id=chat_id, text=message)
+            bot.sendMessage(chat_id=chat_id, text="Hi, start to begin")
 
     return "ok"
 
@@ -41,31 +63,52 @@ def telegram_webhook(request):
 def start(chat_id):
     button_list = [
         [
-            telegram.InlineKeyboardButton("all artists", callback_data="all artists"),
-            telegram.InlineKeyboardButton("artworks", callback_data="artworks"),
-            telegram.InlineKeyboardButton("latest creations", callback_data="latest creations")
+            telegram.InlineKeyboardButton("latest activity", callback_data="latest activity"),
+            telegram.InlineKeyboardButton("latest creations", callback_data="latest creations"),
+            # telegram.InlineKeyboardButton("artworks by artist", callback_data="artworks by artist"),
         ],
         [
-            telegram.InlineKeyboardButton("latest activity", callback_data="latest activity"),
             telegram.InlineKeyboardButton("least expensive", callback_data="least expensive"),
-            telegram.InlineKeyboardButton("most expensive", callback_data="most expensive")
+            telegram.InlineKeyboardButton("most expensive", callback_data="most expensive"),
+            telegram.InlineKeyboardButton("all artists", callback_data="all artists"),
         ],
     ]
     reply_markup = telegram.InlineKeyboardMarkup(button_list)
     bot.sendMessage(chat_id=chat_id, text="Choose option:", reply_markup=reply_markup)
 
+#
+# def artist_works_menu(chat_id):
+#     print("artist works menu")
+#     button_list = []
+#     for artist in all_artists_lookup():
+#         if artist['enabled'] and len(artist['ethAddress']) > 0:
+#             button_list.append(
+#                 telegram.InlineKeyboardButton(
+#                     text=artist['name'],
+#                     callback_data="eth_address_lookup=" + artist['ethAddress'][0]
+#                 )
+#             )
+#
+#     reply_markup = telegram.InlineKeyboardMarkup(inline_keyboard=list(chunks(button_list, 4)))
+#     bot.sendMessage(chat_id=chat_id, text="Artists", reply_markup=reply_markup)
+
+
+def all_artists(chat_id):
+    print("All artist")
+    high_works = ""
+    for artist in all_artists_lookup():
+        if artist['enabled'] and len(artist['ethAddress']) > 0:
+            high_works += '<a href="https://dapp.knownorigin.io/artists/' + artist['ethAddress'][
+                0] + '">' + artist['name'] + '</a>\n'
+
+    bot.sendMessage(chat_id=chat_id, text=high_works, parse_mode="HTML")
+
 
 def least_expensive(chat_id):
     print("Finding least expensive")
     high_works = ""
-    for y in least_expensive_lookup():
-        high_works = high_works + "- Artist: " + str(y[0])
-        high_works = high_works + ", work: " + str(y[1])
-        high_works = high_works + ", price: " + str(y[3]) + " Eth"
-        high_works = high_works + ", remaining works: " + str(y[2])
-        html_link = '<a href="' + str(y[6]) + '">link to work</a>'
-        high_works = high_works + ", " + html_link
-        high_works = high_works + "\n"
+    for edition in least_expensive_lookup():
+        high_works += build_edition_list(edition) + "\n"
 
     bot.sendMessage(chat_id=chat_id, text=high_works, parse_mode="HTML")
 
@@ -73,14 +116,8 @@ def least_expensive(chat_id):
 def most_expensive(chat_id):
     print("Finding most expensive")
     high_works = ""
-    for y in most_expensive_lookup():
-        high_works = high_works + "- Artist: " + str(y[0])
-        high_works = high_works + ", work: " + str(y[1])
-        high_works = high_works + ", price: " + str(y[3]) + " Eth"
-        high_works = high_works + ", remaining works: " + str(y[2])
-        html_link = '<a href="' + str(y[6]) + '">link to work</a>'
-        high_works = high_works + ", " + html_link
-        high_works = high_works + "\n"
+    for edition in most_expensive_lookup():
+        high_works += build_edition_list(edition) + "\n"
 
     bot.sendMessage(chat_id=chat_id, text=high_works, parse_mode="HTML")
 
@@ -88,31 +125,41 @@ def most_expensive(chat_id):
 def latest_creations(chat_id):
     print("Finding latest creations")
     high_works = ""
-    for y in latest_creations_lookup():
-        high_works = high_works + "- Artist: " + str(y[0])
-        high_works = high_works + ", work: " + str(y[1])
-        high_works = high_works + ", price: " + str(y[3]) + " Eth"
-        high_works = high_works + ", remaining works: " + str(y[2])
-        html_link = '<a href="' + str(y[6]) + '">link to work</a>'
-        high_works = high_works + ", " + html_link
-        high_works = high_works + "\n"
+    for edition in latest_creations_lookup():
+        high_works += build_edition_list(edition) + "\n"
 
     bot.sendMessage(chat_id=chat_id, text=high_works, parse_mode="HTML")
 
 
 def latest_activity(chat_id):
-    print("Finding least activity")
+    print("Finding latest activity")
     high_works = ""
     for edition in latest_activity_lookup():
-        high_works = high_works + "- Artist: " + str(edition[0])
-        high_works = high_works + ", work: " + str(edition[1])
-        high_works = high_works + ", price: " + str(edition[3]) + " Eth"
-        high_works = high_works + ", remaining works: " + str(edition[2])
-        html_link = '<a href="' + str(edition[6]) + '">link to work</a>'
-        high_works = high_works + ", " + html_link
-        high_works = high_works + "\n"
+        high_works += build_edition_list(edition) + "\n"
 
     bot.sendMessage(chat_id=chat_id, text=high_works, parse_mode="HTML")
+
+
+def build_edition_list(data):
+    high_works = ""
+    artist_name = str(data[0])
+    artwork_name = str(data[1])
+    deep_link = str(data[6])
+
+    price = "FREE" if data[3] == 0 else str(data[3]) + "ETH"
+    remaining = "SOLD OUT" if data[2] == 0 else "(" + str(data[2]) + " remaining)"
+    html_link = '<a href="' + deep_link + '">' + artwork_name + '</a>'
+
+    high_works = high_works + "- " + html_link
+    high_works = high_works + " by " + artist_name
+    high_works = high_works + " - " + price
+    return high_works + " " + remaining
+
+
+def chunks(l, n):
+    """Yield successive n-sized chunks from l."""
+    for i in range(0, len(l), n):
+        yield l[i:i + n]
 
 
 ##
@@ -206,3 +253,10 @@ def least_expensive_lookup():
             expensive.append(temp_list)
 
     return expensive
+
+
+def all_artists_lookup():
+    common_url = "https://dapp.knownorigin.io/api/artist/all"
+    with urllib.request.urlopen(common_url) as url:
+        raw_artists = json.loads(url.read().decode())
+        return raw_artists

@@ -17,3 +17,8 @@ See https://seminar.io/2018/09/03/building-serverless-telegram-bot/ for more det
 ```
 $ gcloud beta functions deploy telegram_webhook --set-env-vars "TELEGRAM_TOKEN=000:AAA" --runtime python37 --trigger-http
 ```
+
+## We have two bots
+
+* Live - `@knownorigin_test`
+* Test - `@knownorigin_test_bot`
