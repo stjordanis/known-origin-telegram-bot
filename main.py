@@ -56,6 +56,7 @@ def telegram_webhook(request):
 
         else:
             bot.sendMessage(chat_id=chat_id, text="Hi, start to begin")
+            start(chat_id)
 
     return "ok"
 
@@ -63,18 +64,20 @@ def telegram_webhook(request):
 def start(chat_id):
     button_list = [
         [
-            telegram.InlineKeyboardButton("latest activity", callback_data="latest activity"),
-            telegram.InlineKeyboardButton("latest creations", callback_data="latest creations"),
+            telegram.KeyboardButton("latest activity"),
+            telegram.KeyboardButton("latest creations"),
             # telegram.InlineKeyboardButton("artworks by artist", callback_data="artworks by artist"),
         ],
         [
-            telegram.InlineKeyboardButton("least expensive", callback_data="least expensive"),
-            telegram.InlineKeyboardButton("most expensive", callback_data="most expensive"),
-            telegram.InlineKeyboardButton("all artists", callback_data="all artists"),
+            telegram.KeyboardButton("least expensive"),
+            telegram.KeyboardButton("most expensive"),
+            # telegram.KeyboardButton("all artists"),
         ],
     ]
-    reply_markup = telegram.InlineKeyboardMarkup(button_list)
+    # reply_markup = telegram.InlineKeyboardMarkup(button_list)
+    reply_markup = telegram.ReplyKeyboardMarkup(button_list, resize_keyboard=True)
     bot.sendMessage(chat_id=chat_id, text="Choose option:", reply_markup=reply_markup)
+
 
 #
 # def artist_works_menu(chat_id):
