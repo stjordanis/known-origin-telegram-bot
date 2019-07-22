@@ -4,6 +4,7 @@ import urllib.request
 
 import telegram
 import logging
+from random import sample
 
 # Enable logging
 logging.basicConfig(
@@ -45,17 +46,17 @@ def telegram_webhook(request):
         elif message.lower() == "all artists":
             all_artists(chat_id)
 
-        elif message.lower() == "least expensive":
+        elif message.lower() == "feeling lucky (low price)":
             least_expensive(chat_id)
 
-        elif message.lower() == "most expensive":
+        elif message.lower() == "feeling lucky (high price)":
             most_expensive(chat_id)
 
         elif message.lower() == "/start" or message.lower() == "start":
             start(chat_id)
 
         else:
-            bot.sendMessage(chat_id=chat_id, text="Hi, start to begin")
+            bot.sendMessage(chat_id=chat_id, text="Hi, type 'start' to begin")
             start(chat_id)
 
     return "ok"
@@ -69,8 +70,8 @@ def start(chat_id):
             # telegram.InlineKeyboardButton("artworks by artist", callback_data="artworks by artist"),
         ],
         [
-            telegram.KeyboardButton("least expensive"),
-            telegram.KeyboardButton("most expensive"),
+            telegram.KeyboardButton("feeling lucky (high price)"),
+            telegram.KeyboardButton("feeling lucky (low price)"),
             # telegram.KeyboardButton("all artists"),
         ],
     ]
@@ -216,7 +217,7 @@ def latest_creations_lookup():
 
 def most_expensive_lookup():
     expensive = []
-    common_url = "https://dapp.knownorigin.io/api/network/1/edition/gallery/list?limit=10&order=desc"
+    common_url = "https://dapp.knownorigin.io/api/network/1/edition/gallery/list?limit=75&order=desc"
     with urllib.request.urlopen(common_url) as url:
         my_dict_common = json.loads(url.read().decode())
         new_list_common = my_dict_common["data"]
@@ -233,12 +234,12 @@ def most_expensive_lookup():
             temp_list.append(x["marketplace_deeplink_url"])
             expensive.append(temp_list)
 
-    return expensive
+    return sample(expensive, 10)
 
 
 def least_expensive_lookup():
     expensive = []
-    common_url = "https://dapp.knownorigin.io/api/network/1/edition/gallery/list?limit=10&order=asc"
+    common_url = "https://dapp.knownorigin.io/api/network/1/edition/gallery/list?limit=75&order=asc"
     with urllib.request.urlopen(common_url) as url:
         my_dict_common = json.loads(url.read().decode())
         new_list_common = my_dict_common["data"]
@@ -255,7 +256,7 @@ def least_expensive_lookup():
             temp_list.append(x["marketplace_deeplink_url"])
             expensive.append(temp_list)
 
-    return expensive
+    return sample(expensive, 10)
 
 
 def all_artists_lookup():
